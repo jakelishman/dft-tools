@@ -32,6 +32,16 @@
 
 # If we're not running as a qsub'd job, then set the workdir to the current
 # directory.
+
+check=`which $1 2>/dev/null`
+
+if [ $? -ne 0 ]; then
+    echo "Error: could not find the cycle convergence checker \`$1\` in the path." >&2
+    exit 1
+fi
+
+shift
+
 if [ -z $PBS_O_WORKDIR ]; then
     PBS_O_WORKDIR=$PWD
 fi
@@ -75,20 +85,23 @@ while [ $# -ge 1 ]; do
         # "Check" for convergence!
         # tail -n 4 ${a}.out | grep -q "cycle converged"
 
+	$(check) $(a).out
+
         # If the grep returned an error code, that means we didn't find the term
         # "cycle converged", so it didn't!
-        # if [ $? -ne 0 ]; then
-        #     echo "$1/${a} did not converge" >&2
+        if [ $? -ne 0 ]; then
+             echo "$1/${a} did not converge" >&2
 
 
         # Otherwise, the cycle converged and we can print out the results.
-        # else
-        line=$(echo `tail -n 1 ${f}`)
-        arr=($line)
+        else
+	   line=$(echo `tail -n 1 ${f}`)
+	   arr=($line)
 
-        # Print out the lattice parameter, magnetisation, Fermi energy and
-        # total integrated energy, in that order.
-        printf "%.15g, %.15g, %.15g, %.15g\n" "$a" "${arr[7]}" "${arr[4]}" "${arr[9]}"
+	  # Print out the lattice parameter, magnetisation, Fermi energy and
+	  # total integrated energy, in that order.
+	  printf "%.15g, %.15g, %.15g, %.15g\n" "$a" "${arr[7]}" "${arr[4]}" "${arr[9]}"
+      fi
     done
 
     # Move to the next folder in the argument list.

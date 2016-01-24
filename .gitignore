@@ -2,6 +2,7 @@
 util/ferh-cell-compare
 util/half-column
 util/minima
+util/converge_check
 
 # Untracked generators
 gen/**
