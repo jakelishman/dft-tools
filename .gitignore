@@ -1,0 +1,13 @@
+# Untracked binaries
+util/ferh-cell-compare
+util/half-column
+util/minima
+
+# Untracked generators
+gen/**
+# But include the generator source code
+!gen/*.c
+
+# Don't track vim swapfiles or emacs backups
+*.sw*
+*~
