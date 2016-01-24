@@ -31,8 +31,9 @@
 #   2015-11-21
 
 # If we're not running as a qsub'd job, then set the workdir to the current
-# directory.
+# directory
 
+# Checking to make sure the first argument is the location of the convergence checker program
 check=`which $1 2>/dev/null`
 
 if [ $? -ne 0 ]; then
@@ -85,11 +86,14 @@ while [ $# -ge 1 ]; do
         # "Check" for convergence!
         # tail -n 4 ${a}.out | grep -q "cycle converged"
 
+	# Running the convergence checker program for this output file
 	$(check) $(a).out
 
-        # If the grep returned an error code, that means we didn't find the term
+        # If the convergence checker returned an error code, that means we didn't find the term
         # "cycle converged", so it didn't!
-        if [ $? -ne 0 ]; then
+	if [ $? -eq 3 ]; then
+             echo "For $1/${a} , error reading output file" >&2
+        elif [ $? -eq 1 ]; then
              echo "$1/${a} did not converge" >&2
 
 
