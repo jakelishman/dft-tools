@@ -83,29 +83,25 @@ while [ $# -ge 1 ]; do
         # Get the lattice parameter (the first part of the filename).
         a=${f%_SCF.log}
 
-        # "Check" for convergence!
-        # tail -n 4 ${a}.out | grep -q "cycle converged"
-
-	# Running the convergence checker program for this output file
-	$(check) $(a).out
+        # Running the convergence checker program for this output file
+        ${check} `printf "%.6f.out" ${a}`
+        check_status=$?
 
         # If the convergence checker returned an error code, that means we didn't find the term
         # "cycle converged", so it didn't!
-	if [ $? -eq 3 ]; then
-             echo "For $1/${a} , error reading output file" >&2
-        elif [ $? -eq 1 ]; then
-             echo "$1/${a} did not converge" >&2
-
-
+        if [ ${check_status} -eq 3 ]; then
+            echo "For $1/${a}, error reading output file" >&2
+        elif [ ${check_status} -eq 1 ]; then
+            echo "$1/${a} did not converge" >&2
         # Otherwise, the cycle converged and we can print out the results.
         else
-	   line=$(echo `tail -n 1 ${f}`)
-	   arr=($line)
+            line=$(echo `tail -n 1 ${f}`)
+            arr=($line)
 
-	  # Print out the lattice parameter, magnetisation, Fermi energy and
-	  # total integrated energy, in that order.
-	  printf "%.15g, %.15g, %.15g, %.15g\n" "$a" "${arr[7]}" "${arr[4]}" "${arr[9]}"
-      fi
+            # Print out the lattice parameter, magnetisation, Fermi energy and
+            # total integrated energy, in that order.
+            printf "%.15g, %.15g, %.15g, %.15g\n" "$a" "${arr[7]}" "${arr[4]}" "${arr[9]}"
+        fi
     done
 
     # Move to the next folder in the argument list.
