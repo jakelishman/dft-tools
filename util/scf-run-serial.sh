@@ -56,7 +56,6 @@ fi
 
 # The output script that we will be qsub-ing.
 script="scf${first}-${otherlats##* }.sh"
-echo "$script"
 
 # The kkrscf binary.
 bin=${HOME}/bin/kkrscf5.4
