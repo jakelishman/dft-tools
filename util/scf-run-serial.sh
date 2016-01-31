@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # SYNOPSIS
-#   scf-run-serial.sh a0 [a1 ... an]
-#   or pipe lattice parameters into the script.
+#   scf-run-serial.sh generator [outdir]
+#   and pipe lattice parameters into the script.
 #
 # BUGS
 #   Lattice parameters piped into the program must be \n-separated, not
@@ -15,44 +15,51 @@
 # DATE
 #   2016-01-28
 
-# If there are no command line arguments then we need to read them from a pipe.
-if [ $# -eq 0 ]; then
-    # If stdin (&0) is a tty, then exit because something's gone wrong.
-    if [ -t 0 ]; then
-        echo "Usage: scf-run-serial.sh a0 [a1 ... an]" >&2
-        echo "       or pipe lattice parameters into me." >&2
-        exit 1
-    fi
-
-    # Read in the first lattice parameter.
-    IFS=
-    read -r first
-
-    # Initialise the other lattice parameter string.
-    otherlats=""
-    
-    # Read in other lattice paramters.
-    while IFS= read -r curlat; do
-        # If nothing was read in, then end.
-        [[ $curlat ]] || break
-
-        # Add the next line to the lattice parameter, trimming trailing space.
-        otherlats+=`echo "$curlat" | xargs`
-        # Add a single space to separate.
-        otherlats+=" "
-    done
-
-    # Trim that last trailing space off again.
-    otherlats=`echo "$otherlats" | xargs`
-else
-    # Get the first command line argument.
-    first=$1
-
-    # Shift to ignore the first argument, then take the rest of them as the
-    # string of arguments.
-    shift
-    otherlats=$@
+# If we're not given the generator, then we must fail.
+if [ $# -ne 1 ] && [ $# -ne 2 ]; then
+    echo "Usage: scf-run-serial.sh generator [outdir]" >&2
+    echo "       and pipe in lattice parameters" >&2
+    exit 1
 fi
+
+# Get the absolute path of the generator.
+gen=`which $1 2>/dev/null`
+
+# Check that the generator exists in the path
+if [ $? -ne 0 ]; then
+    echo "Error: could not find the generator '$1' in the path." >&2
+    exit 1
+fi
+
+# Change into the output directory, if it exists.
+if [ -n "$2" ]; then
+    mkdir -p "$2"
+    if [ $? -ne 0 ]; then
+        echo "Error: could not create directory '$2'." >&2
+    fi
+    cd "$2"
+fi
+
+# Read in the first lattice parameter.
+IFS=
+read -r first
+
+# Initialise the other lattice parameter string.
+otherlats=""
+
+# Read in other lattice paramters.
+while IFS= read -r curlat; do
+    # If nothing was read in, then end.
+    [[ $curlat ]] || break
+
+    # Add the next line to the lattice parameter, trimming trailing space.
+    otherlats+=`echo "$curlat" | xargs`
+    # Add a single space to separate.
+    otherlats+=" "
+done
+
+# Trim final space.
+otherlats=`echo "$otherlats" | xargs`
 
 # The output script that we will be qsub-ing.
 script="scf${first}-${otherlats##* }.sh"
@@ -67,6 +74,7 @@ module load ompi/1.6.4/intel/13.1
 # Actually write the script into the correct place.
 echo '#!/bin/bash' > ${script}
 echo 'cd ${PBS_O_WORKDIR}' >> ${script}
+echo "${gen} -s ${first}" >> ${script}
 echo "${bin} < `printf '%f.inp' ${first}` > `printf '%f.out' ${first}`" >> ${script}
 echo "prevf=`printf '%f' ${first}`" >> ${script}
 
@@ -75,8 +83,7 @@ echo "prevf=`printf '%f' ${first}`" >> ${script}
 if [ -n "$otherlats" ]; then 
     echo "for i in ${otherlats}; do" >> ${script}
     echo '    latf=`printf "%f" ${i}`' >> ${script}
-    echo '    sed "s/${prevf}/${latf}/g" ${prevf}.inp > ${latf}.inp' >> ${script}
-    echo '    sed "s/ALAT[[:space:]]*[0-9]\.[0-9]*E[-+][0-9]*$/ALAT              ${latf}/" ${prevf}.pot_new > ${latf}.pot' >> ${script}
+    echo "    ${gen} -i \${i} \${prevf}.pot_new" >> ${script}
     echo "    ${bin} < \${latf}.inp > \${latf}.out" >> ${script}
     echo '    prevf=${latf}' >> ${script}
     echo 'done' >> ${script}
