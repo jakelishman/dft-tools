@@ -9,6 +9,8 @@ util/difference
 gen/**
 # But include the generator source code
 !gen/*.c
+!gen/*.h
+!gen/Makefile
 
 # Don't track vim swapfiles or emacs backups
 *.sw*
