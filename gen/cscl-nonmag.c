@@ -1,96 +1,68 @@
+#include "generator.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h> 
-#define WS_RATIO 0.3907963208
-#define MAX_FILENAME 1024
+#include <stdbool.h>
+#include <math.h>
 
-int write_pot_file (const double lattice_param);
-int write_inp_file (const double lattice_param);
-
-void make_pot_filename (char *filename, const double param);
-
-int main (int argc, char **argv)
+bool
+correct_number_of_parameters (int nparams)
 {
-    int i, ret = 0;
-    double lattice_param;
-    char *test = argv[0];
-
-    for (i = 1; i < argc; i++) {
-        lattice_param = strtod (argv[i], &test);
-
-        if (test == argv[i]) {
-            fprintf (stderr, "Failed to convert lattice parameter %s.\n", argv[i]);
-            ret = 1;
-            continue;
-        }
-
-        if (write_pot_file (lattice_param)) {
-            fprintf (stderr, "Couldn't write potential file for %g.\n", lattice_param);
-            ret = 1;
-            continue;
-        }
-
-        if (write_inp_file (lattice_param)) {
-            fprintf (stderr, "Couldn't write input file for %g.\n", lattice_param);
-            ret = 1;
-            continue;
-        }
-    }
-
-    return ret;
+    return nparams == 1;
 }
 
-void make_pot_filename (char *filename, const double param)
+void
+specific_usage (void)
 {
-    sprintf (filename, "%f.pot", param);
+    fprintf (stderr, "Takes only one lattice parameter, which should be the same as the lattice parameter\n");
+    fprintf (stderr, "of CsCl FeRh.\n");
+    return;
 }
 
-void make_inp_filename (char *filename, const double param)
+void
+make_pot_filename (const double *params)
 {
-    sprintf (filename, "%f.inp", param);
+    snprintf (output_pot_filename, MAX_FILENAME, "%f.pot", params[0]);
 }
 
-int write_inp_file (const double lattice_param)
+void
+make_inp_filename (const double *params)
 {
-    char pot_filename[MAX_FILENAME];
-    char inp_filename[MAX_FILENAME];
+    snprintf (output_inp_filename, MAX_FILENAME, "%f.inp", params[0]);
+}
 
-    make_pot_filename (pot_filename, lattice_param);
-    make_inp_filename (inp_filename, lattice_param);
-    FILE *out = fopen (inp_filename, "w");
-    if (!out) return 1;
+int
+write_inp_file (FILE *out, const double *params, int mode)
+{
+    (void) mode;
 
-    fprintf (out, "CONTROL  DATASET     = %f\n", lattice_param);
+    fprintf (out, "CONTROL  DATASET     = %f\n", params[0]);
     fprintf (out, "         ADSI        = SCF\n");
-    fprintf (out, "         POTFIL      = %s\n", pot_filename);
+    fprintf (out, "         POTFIL      = %s\n", output_pot_filename);
     fprintf (out, "         PRINT = 0\n");
+    fprintf (out, "         NONMAG\n");
     fprintf (out, "\n");
-    fprintf (out, "MODE     SP-SREL\n");
+    fprintf (out, "MODE     SREL\n");
     fprintf (out, "\n");
     fprintf (out, "TAU      BZINT= POINTS  NKTAB= 250\n");
     fprintf (out, "\n");
     fprintf (out, "ENERGY   GRID={5}  NE={30}\n");
     fprintf (out, "         EMIN=-0.2   ImE=0.0 Ry\n");
     fprintf (out, "\n");
-    fprintf (out, "SCF      NITER=200 MIX=0.10 VXC=VWN\n");
-    fprintf (out, "         TOL=0.00001  MIXOP=0.10  ISTBRY=1\n");
+    fprintf (out, "SCF      NITER=200 MIX=0.20 VXC=VWN\n");
+    fprintf (out, "         TOL=0.00001  MIXOP=0.20  ISTBRY=1\n");
     fprintf (out, "         QIONSCL=1.0\n");
-    fprintf (out, "         MSPIN={2.9, 0, -2.9, 0}\n");
     fprintf (out, "         NOSSITER\n");
 
-    fclose (out);
     return 0;
 }
 
-int write_pot_file (const double lattice_param)
+int
+write_pot_file (FILE *out, const double *params, int mode)
 {
-    char pot_filename[MAX_FILENAME];
-    make_pot_filename (pot_filename, lattice_param);
+    (void) mode;
 
-    FILE *out = fopen (pot_filename, "w");
-    if (!out) return 1;
-
-    const double rws = 0.49237251092 * lattice_param;
+    const double rws = 0.49237251092 * params[0];
     const double rmt = 0.85 * rws;
     const double dx  = log (rws / 0.000001) / 720.0;
 
@@ -103,17 +75,17 @@ int write_pot_file (const double lattice_param)
     fprintf (out, "FORMAT    6  (21.05.2007)\n");
     fprintf (out, "*******************************************************************************\n");
     fprintf (out, "GLOBAL SYSTEM PARAMETER\n");
-    fprintf (out, "NQ                 4\n");
-    fprintf (out, "NT                 4\n");
+    fprintf (out, "NQ                 2\n");
+    fprintf (out, "NT                 2\n");
     fprintf (out, "NM                 2\n");
-    fprintf (out, "IREL               2\n");
+    fprintf (out, "IREL               1\n");
     fprintf (out, "*******************************************************************************\n");
     fprintf (out, "SCF-INFO\n");
     fprintf (out, "INFO      NONE\n");
     fprintf (out, "SCFSTATUS START\n");
     fprintf (out, "FULLPOT   F\n");
     fprintf (out, "BREITINT  F\n");
-    fprintf (out, "NONMAG    F\n");
+    fprintf (out, "NONMAG    T\n");
     fprintf (out, "ORBPOL    NONE\n");
     fprintf (out, "EXTFIELD  F\n");
     fprintf (out, "BLCOUPL   F\n");
@@ -136,27 +108,23 @@ int write_pot_file (const double lattice_param)
     fprintf (out, "LATTICE\n");
     fprintf (out, "SYSDIM       3D\n");
     fprintf (out, "SYSTYPE      BULK\n");
-    fprintf (out, "BRAVAIS           13        cubic       face-centered  m3m    O_h \n");
-    fprintf (out, "ALAT          %.10f\n", 2 * lattice_param);
-    fprintf (out, "A(1)          0.0000000000    0.5000000000    0.5000000000\n");
-    fprintf (out, "A(2)          0.5000000000    0.0000000000    0.5000000000\n");
-    fprintf (out, "A(3)          0.5000000000    0.5000000000    0.0000000000\n");
+    fprintf (out, "BRAVAIS           12        cubic       primitive      m3m    O_h \n");
+    fprintf (out, "ALAT          %.10f\n", params[0]);
+    fprintf (out, "A(1)          1.0000000000    0.0000000000    0.0000000000\n");
+    fprintf (out, "A(2)          0.0000000000    1.0000000000    0.0000000000\n");
+    fprintf (out, "A(3)          0.0000000000    0.0000000000    1.0000000000\n");
     fprintf (out, "*******************************************************************************\n");
     fprintf (out, "SITES\n");
     fprintf (out, "CARTESIAN T\n");
     fprintf (out, "BASSCALE      1.0000000000    1.0000000000    1.0000000000\n");
     fprintf (out, "        IQ      QX              QY              QZ\n");
     fprintf (out, "         1    0.0000000000    0.0000000000    0.0000000000\n");
-    fprintf (out, "         2    0.2500000000    0.2500000000    0.2500000000\n");
-    fprintf (out, "         3    0.5000000000    0.5000000000    0.5000000000\n");
-    fprintf (out, "         4    0.7500000000    0.7500000000    0.7500000000\n");
+    fprintf (out, "         2    0.5000000000    0.5000000000    0.5000000000\n");
     fprintf (out, "*******************************************************************************\n");
     fprintf (out, "OCCUPATION\n");
     fprintf (out, "        IQ     IREFQ       IMQ       NOQ  ITOQ  CONC\n");
     fprintf (out, "         1         1         1         1     1 1.000\n");
-    fprintf (out, "         2         1         1         1     2 1.000\n");
-    fprintf (out, "         3         2         2         1     3 1.000\n");
-    fprintf (out, "         4         2         2         1     4 1.000\n");
+    fprintf (out, "         2         2         2         1     2 1.000\n");
     fprintf (out, "*******************************************************************************\n");
     fprintf (out, "REFERENCE SYSTEM\n");
     fprintf (out, "NREF              2\n");
@@ -170,8 +138,6 @@ int write_pot_file (const double lattice_param)
     fprintf (out, "        IQ      QMTET           QMPHI \n");
     fprintf (out, "         1    0.0000000000    0.0000000000\n");
     fprintf (out, "         2    0.0000000000    0.0000000000\n");
-    fprintf (out, "         3    0.0000000000    0.0000000000\n");
-    fprintf (out, "         4    0.0000000000    0.0000000000\n");
     fprintf (out, "*******************************************************************************\n");
     fprintf (out, "MESH INFORMATION\n");
     fprintf (out, "MESH-TYPE EXPONENTIAL\n");
@@ -181,11 +147,8 @@ int write_pot_file (const double lattice_param)
     fprintf (out, "*******************************************************************************\n");
     fprintf (out, "TYPES\n");
     fprintf (out, "   IT     TXTT        ZT     NCORT     NVALT    NSEMCORSHLT\n");
-    fprintf (out, "    1     Fe_1            26        18         8              0\n");
-    fprintf (out, "    2     Rh_1            45        36         9              0\n");
-    fprintf (out, "    3     Fe_2            26        18         8              0\n");
-    fprintf (out, "    4     Rh_2            45        36         9              0\n");
+    fprintf (out, "    1     Fe              26        18         8              0\n");
+    fprintf (out, "    2     Rh              45        36         9              0\n");
 
-    fclose (out);
     return 0;
 }

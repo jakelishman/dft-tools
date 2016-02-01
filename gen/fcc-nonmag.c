@@ -1,68 +1,44 @@
+#include "generator.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h> 
-#define WS_RATIO 0.3907963208
-#define MAX_FILENAME 1024
+#include <stdbool.h>
+#include <math.h>
 
-int write_pot_file (const double lattice_param);
-int write_inp_file (const double lattice_param);
-
-void make_pot_filename (char *filename, const double param);
-
-int main (int argc, char **argv)
+bool
+correct_number_of_parameters (int nparams)
 {
-    int i, ret = 0;
-    double lattice_param;
-    char *test = argv[0];
-
-    for (i = 1; i < argc; i++) {
-        lattice_param = strtod (argv[i], &test);
-
-        if (test == argv[i]) {
-            fprintf (stderr, "Failed to convert lattice parameter %s.\n", argv[i]);
-            ret = 1;
-            continue;
-        }
-
-        if (write_pot_file (lattice_param)) {
-            fprintf (stderr, "Couldn't write potential file for %g.\n", lattice_param);
-            ret = 1;
-            continue;
-        }
-
-        if (write_inp_file (lattice_param)) {
-            fprintf (stderr, "Couldn't write input file for %g.\n", lattice_param);
-            ret = 1;
-            continue;
-        }
-    }
-
-    return ret;
+    return nparams == 1;
 }
 
-void make_pot_filename (char *filename, const double param)
+void
+specific_usage (void)
 {
-    sprintf (filename, "%f.pot", param);
+    fprintf (stderr, "Takes only one lattice parameter, which should be the same as the lattice parameter\n");
+    fprintf (stderr, "of CsCl FeRh.\n");
+    return;
 }
 
-void make_inp_filename (char *filename, const double param)
+void
+make_pot_filename (const double *params)
 {
-    sprintf (filename, "%f.inp", param);
+    snprintf (output_pot_filename, MAX_FILENAME, "%f.pot", params[0]);
 }
 
-int write_inp_file (const double lattice_param)
+void
+make_inp_filename (const double *params)
 {
-    char pot_filename[MAX_FILENAME];
-    char inp_filename[MAX_FILENAME];
+    snprintf (output_inp_filename, MAX_FILENAME, "%f.inp", params[0]);
+}
 
-    make_pot_filename (pot_filename, lattice_param);
-    make_inp_filename (inp_filename, lattice_param);
-    FILE *out = fopen (inp_filename, "w");
-    if (!out) return 1;
+int
+write_inp_file (FILE *out, const double *params, int mode)
+{
+    (void) mode;
 
-    fprintf (out, "CONTROL  DATASET     = %f\n", lattice_param);
+    fprintf (out, "CONTROL  DATASET     = %f\n", params[0]);
     fprintf (out, "         ADSI        = SCF\n");
-    fprintf (out, "         POTFIL      = %s\n", pot_filename);
+    fprintf (out, "         POTFIL      = %s\n", output_pot_filename);
     fprintf (out, "         PRINT = 0\n");
     fprintf (out, "         NONMAG\n");
     fprintf (out, "\n");
@@ -82,15 +58,12 @@ int write_inp_file (const double lattice_param)
     return 0;
 }
 
-int write_pot_file (const double lattice_param)
+int
+write_pot_file (FILE *out, const double *params, int mode)
 {
-    char pot_filename[MAX_FILENAME];
-    make_pot_filename (pot_filename, lattice_param);
+    (void) mode;
 
-    FILE *out = fopen (pot_filename, "w");
-    if (!out) return 1;
-
-    const double rws = 0.49237251092 * lattice_param;
+    const double rws = 0.49237251092 * params[0];
     const double rmt = 0.85 * rws;
     const double dx  = log (rws / 0.000001) / 720.0;
 
@@ -137,7 +110,7 @@ int write_pot_file (const double lattice_param)
     fprintf (out, "SYSDIM       3D\n");
     fprintf (out, "SYSTYPE      BULK\n");
     fprintf (out, "BRAVAIS           13        cubic       face-centered  m3m    O_h \n");
-    fprintf (out, "ALAT          %.10f\n", 2 * lattice_param);
+    fprintf (out, "ALAT          %.10f\n", 2 * params[0]);
     fprintf (out, "A(1)          0.0000000000    0.5000000000    0.5000000000\n");
     fprintf (out, "A(2)          0.5000000000    0.0000000000    0.5000000000\n");
     fprintf (out, "A(3)          0.5000000000    0.5000000000    0.0000000000\n");
