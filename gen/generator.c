@@ -108,9 +108,7 @@ main (int argc, char **argv)
     "    Generate an \"iterating\" potential file, based on a given .pot_new file.  Use in regions\n"\
     "    where convergence may be a problem.\n"\
     "\n"\
-    "LATTICE PARAMETERS\n"\
-    "The number of lattice parameters is variable, and will vary depending on the specific generator\n"\
-    "in use.\n\n"
+    "LATTICE PARAMETERS\n"
 
 /* Print out usage information and exit the program. */
 static void
