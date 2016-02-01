@@ -1,14 +1,12 @@
-CC=gcc-4.9
-CFLAGS=-Wall -Wextra -std=gnu99
-LDFLAGS=-lm
-
-BINS= minima ferh-cell-compare half
 BACKUP_DIR=~/sprkkr-backup/
 
-all: $(BINS)
+all:
+	cd gen; make all
+	cd util; make all
 
 clean:
-	rm $(BINS)
+	cd gen; make clean
+	cd util; make clean
 
 backup: backup-dir
 	mv *-backup_*.tar.gz $(BACKUP_DIR)
