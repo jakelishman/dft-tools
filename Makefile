@@ -10,7 +10,7 @@ all: $(BINS)
 clean:
 	rm $(BINS)
 
-backup: | backup-dir
+backup: backup-dir
 	mv *-backup_*.tar.gz $(BACKUP_DIR)
 
 backup-dir:
