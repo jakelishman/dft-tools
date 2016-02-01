@@ -20,15 +20,9 @@ specific_usage (void)
 }
 
 void
-make_pot_filename (const double *params)
+make_dataset (const double *params)
 {
-    snprintf (output_pot_filename, MAX_FILENAME, "%f.pot", params[0]);
-}
-
-void
-make_inp_filename (const double *params)
-{
-    snprintf (output_inp_filename, MAX_FILENAME, "%f.inp", params[0]);
+    snprintf (dataset, sizeof(dataset), "%.10g", params[0]);
 }
 
 int

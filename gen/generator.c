@@ -9,6 +9,7 @@ static FILE *fopen_checked (const char *filename, const char *mode, const char *
 
 char output_inp_filename[MAX_FILENAME];
 char output_pot_filename[MAX_FILENAME];
+char dataset[MAX_FILENAME];
 
 int
 main (int argc, char **argv)
@@ -25,7 +26,7 @@ main (int argc, char **argv)
     int nparams;
     
     /* Array of the converted lattice parameters. */
-    double *lattice_params;
+    double *params;
 
     /* Various file streams for reading and writing. */
     FILE *output_inp_file, *output_pot_file, *input_pot_new_file = NULL;
@@ -64,27 +65,30 @@ main (int argc, char **argv)
         usage ();
 
     /* Allocate space for these lattice parameters. */
-    lattice_params = malloc (nparams * sizeof (*lattice_params));
-    if (!lattice_params) {
+    params = malloc (nparams * sizeof (*params));
+    if (!params) {
         fprintf (stderr, "Couldn't allocate memory to store lattice parameters.\n");
         exit (EXIT_FAILURE);
     }
 
     /* Do the conversion for each parameter into a double. */
     for (int i = 0; param_arg < argc; param_arg++, i++)
-        lattice_params[i] = strtod_checked (argv[param_arg]);
+        params[i] = strtod_checked (argv[param_arg]);
+
+    /* Get the name of the dataset. */
+    make_dataset (params);
 
     /* Generate the filenames for the two output files. */
-    make_inp_filename (lattice_params);
-    make_pot_filename (lattice_params);
+    snprintf (output_inp_filename, sizeof(output_inp_filename), "%s.inp", dataset);
+    snprintf (output_pot_filename, sizeof(output_pot_filename), "%s.pot", dataset);
 
     /* Open the output files for writing. */
     output_inp_file = fopen_checked (output_inp_filename, "w", "input file");
     output_pot_file = fopen_checked (output_pot_filename, "w", "potential file");
 
     /* Write the output files and check for success. */
-    if (write_inp_file (output_inp_file, lattice_params, mode)
-        || write_pot_file (output_pot_file, lattice_params, mode)) {
+    if (write_inp_file (output_inp_file, params, mode)
+        || write_pot_file (output_pot_file, params, mode)) {
         ret = EXIT_FAILURE;
     }
 
@@ -93,7 +97,7 @@ main (int argc, char **argv)
     fclose (output_pot_file);
     if (mode == ITERATING)
         fclose (input_pot_new_file);
-    free (lattice_params);
+    free (params);
 
     return ret;
 }

@@ -6,6 +6,7 @@
 
 /* Array size for the maximum filename. */
 #define MAX_FILENAME 4096
+#define MAX_DATASET  4000
 
 enum _mode {
     START = 0,
@@ -18,14 +19,14 @@ int skip_lines   (FILE *in, long count);
 
 bool correct_number_of_parameters (int nparams);
 
-void make_inp_filename (const double *params);
-void make_pot_filename (const double *params);
+void make_dataset (const double *params);
 
 int write_inp_file (FILE *out, const double *params, int mode);
 int write_pot_file (FILE *out, const double *params, int mode);
 
 void specific_usage (void);
 
+extern char dataset[MAX_FILENAME];
 extern char output_inp_filename[MAX_FILENAME];
 extern char output_pot_filename[MAX_FILENAME];
 
