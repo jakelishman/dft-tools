@@ -34,6 +34,8 @@ make_inp_filename (const double *params)
 int
 write_inp_file (FILE *out, const double *params, int mode)
 {
+    (void) mode;
+
     fprintf (out, "CONTROL  DATASET     = %f\n", params[0]);
     fprintf (out, "         ADSI        = SCF\n");
     fprintf (out, "         POTFIL      = %s\n", output_pot_filename);
@@ -57,6 +59,8 @@ write_inp_file (FILE *out, const double *params, int mode)
 
 int write_pot_file (FILE *out, const double *params, int mode)
 {
+    (void) mode;
+
     const double rws = 0.49237251092 * params[0];
     const double rmt = 0.85 * rws;
     const double dx  = log (rws / 0.000001) / 720.0;
