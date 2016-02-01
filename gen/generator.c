@@ -90,6 +90,9 @@ main (int argc, char **argv)
     if (write_inp_file (output_inp_file, params, mode)
         || write_pot_file (output_pot_file, params, mode)) {
         ret = EXIT_FAILURE;
+    } else {
+        /* Print out the name of the dataset so bash scripts can use it. */
+        puts (dataset);
     }
 
     /* Handle the cleanup operations. */
