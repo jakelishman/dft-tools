@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "generator.h"
 
 static void usage (void);
@@ -165,4 +166,21 @@ fopen_checked (const char *filename, const char *mode, const char *description)
     }
 
     return fp;
+}
+
+/* Calculate the Wigner-Seitz radius of sites in a lattice, assuming that they
+ * all share the same radius.  We pass the 2D matrix like this to make the
+ * semantics clearer than const double **lat_matrix. */
+double
+wigner_seitz_radius (double lattice_parameter, const double lat_matrix[3][3], int nsites)
+{
+    double determinant = 0.0;
+    determinant += lat_matrix[0][0] * (lat_matrix[1][1] * lat_matrix[2][2]
+                                       - lat_matrix[1][2] * lat_matrix[2][1]);
+    determinant += lat_matrix[0][1] * (lat_matrix[1][2] * lat_matrix[2][0]
+                                       - lat_matrix[1][0] * lat_matrix[2][2]);
+    determinant += lat_matrix[0][2] * (lat_matrix[1][0] * lat_matrix[2][1]
+                                       - lat_matrix[1][1] * lat_matrix[2][0]);
+    const double volume = determinant * CUBE(lattice_parameter);
+    return cbrt (0.75 * volume / (M_PI * (double) nsites));
 }
