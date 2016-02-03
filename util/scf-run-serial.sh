@@ -46,7 +46,7 @@ if [ -n "$2" ]; then
 fi
 
 # The output script that we will be qsub-ing.
-script="scf-qsubber.sh"
+script=`date +"scf-qsubber.sh%s%N"`
 
 # The kkrscf binary.
 bin=${HOME}/bin/kkrscf5.4
