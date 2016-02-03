@@ -12,6 +12,13 @@ gen/**
 !gen/*.h
 !gen/Makefile
 
+# Untracked sequencers
+seq/**
+# But include the sequencer source code
+!seq/*.c
+!seq/*.h
+!seq/Makefile
+
 # Don't track vim swapfiles or emacs backups
 *.sw*
 *~
