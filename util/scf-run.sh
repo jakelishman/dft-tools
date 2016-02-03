@@ -10,40 +10,70 @@
 # DATE
 #   2016-01-19
 
-if [ $# -ne 5 ]; then
-    echo "Usage: scf-run.sh outdir generator a_0 da a_n" >&2
+# If we're not given the generator, then we must fail.
+if [ $# -lt 1 ] && [ $# -gt 3 ]; then
+    echo "Usage: scf-run.sh [-t] generator [outdir]" >&2
+    echo "       and pipe in a list of arguments to the generator, one set per line" >&2
     exit 1
 fi
 
-# Rename the input variables to usable names.
-outdir=$1
-first=$3
-inc=$4
-last=$5
-gen=`which $2 2>/dev/null`
+# Check to see if this is a test run (whether or not we should actually do the
+# qsub'ing and rm'ing the script at the end.
+if [ "$1" = "-t" ]; then
+    testrun=true
+    shift
+else
+    testrun=false
+fi
+
+# Get the absolute path of the generator.
+gen=`which $1 2>/dev/null`
 
 # Check that the generator exists in the path
 if [ $? -ne 0 ]; then
-    echo "Error: could not find the generator \`$2\` in the path." >&2
+    echo "Error: could not find the generator '$1' in the path." >&2
     exit 1
 fi
 
-# Check that the increment is not equal to 0
-if [ `echo "${inc} == 0.0" | bc` -eq 1 ]; then
-    echo "Error: the increment cannot be 0." >&2
+# Change into the output directory, if it exists.
+if [ -n "$2" ]; then
+    outdir="$2"
+    mkdir -p "${outdir}"
+    if [ $? -ne 0 ]; then
+        echo "Error: could not create directory '${outdir}'." >&2
+        exit 1
+    fi
+    cd "${outdir}"
+fi
+
+# Make the directory we need for our files.
+scfdir=".scf"
+mkdir -p ${scfdir}
+if [ $? -ne 0 ]; then
+    echo "Error: could not create directory '${scfdir}'." >&2
     exit 1
 fi
 
-# Make the output directory if it doesn't exist.
-mkdir -p ${outdir}
+# Create variables of the temporary files we'll be using.
+prefix=`date +%s_`
+inputs=${scfdir}/${prefix}inputs
 
-# Calculate the number of steps we were asked for, making sure to account for
-# floating point errors.  Integer division by 1 handles the rounding down.
-count=`echo "(((${last} - ${first}) / ${inc}) + 0.5 * ${inc} + 1) / 1" | bc`
+# Redirect the piped in input to the inputs file.
+$(cat - > ${inputs})
+
+# Get the number of inputs.
+count=`wc -l ${inputs}` 
+count=${count% *}
+
+# Check we've at least got something to qsub.
+if [ $count -eq 0 ]; then
+    #rm ${inputs}
+    echo "Error: must have at least one set of lattice parameters!" >&2
+    exit 1
+fi
 
 # The output script that we will be qsub-ing.
-local_script=scf-out.sh
-script=${outdir}/${local_script}
+script=scf-qsubber.sh
 
 # The kkrscf binary.
 bin=${HOME}/bin/kkrscf5.4
@@ -51,26 +81,17 @@ bin=${HOME}/bin/kkrscf5.4
 # Actually write the script into the correct place.
 echo "#!/bin/bash" > ${script}
 echo "cd \$PBS_O_WORKDIR" >> ${script}
-echo "lattice=\`echo \"(\${PBS_ARRAYID} - 1) * ${inc} + ${first}\" | bc\`" >> ${script}
-echo "${gen} \${lattice}" >> ${script}
-echo "${bin} < \`printf "%f.inp" \${lattice}\` > \`printf "%f.out" \${lattice}\`" >> ${script}
+echo "dataset=\`tail -n+\${PBS_ARRAYID} ${inputs} | head -n 1 | xargs ${gen}\`" >> ${script}
+echo "${bin} < \${dataset}.inp > \${dataset}.out" >> ${script}
 
-# Save our current directory.
-startdir=${PWD}
+if [ "${testrun}" = false ]; then
+    # Load the modules we need for `kkrscf` to run. 
+    module load intel/13.1
+    module load ompi/1.6.4/intel/13.1
 
-# Change to the output directory so all our temporary files end up in the right
-# place.
-cd ${outdir}
+    # qsub the job!
+    qsub -q taskfarm -l nodes=1:ppn=1,walltime=04:00:00 -t 1-${count} -V ${script}
 
-# Load the modules we need for `kkrscf` to run. 
-module load intel/13.1
-module load ompi/1.6.4/intel/13.1
-
-# qsub the job!
-qsub -q taskfarm -l nodes=1:ppn=1,walltime=04:00:00 -t 1-${count} -V ${local_script}
-
-# Go back to where we started.
-cd ${startdir}
-
-# Get rid of the temporary script.
-rm ${script}
+    # Get rid of the temporary script.
+    rm ${script}
+fi
