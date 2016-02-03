@@ -1,5 +1,4 @@
-CC=gcc-4.9
-CFLAGS=-Wall -Wextra -std=gnu99
+CFLAGS+=-Wall -Wextra -std=gnu99
 LDFLAGS=-lm
 
 BINS=converge-check difference ferh-cell-compare half-column minima
