@@ -4,10 +4,6 @@
 #   scf-run-serial.sh [-t] generator [outdir]
 #   and pipe lattice parameters into the script.
 #
-# BUGS
-#   Lattice parameters piped into the program must be \n-separated, not
-#   space-separated.  The script fails noisily, but not gracefully if the latter
-#   is given.
 # AUTHOR
 #   Jake Lishman
 # EMAIL
