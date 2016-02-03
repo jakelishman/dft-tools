@@ -26,11 +26,11 @@ make_dataset (const double *params)
 }
 
 int
-write_inp_file (FILE *out, const double *params, int mode)
+write_inp_file (FILE *out, int mode)
 {
     (void) mode;
 
-    fprintf (out, "CONTROL  DATASET     = %f\n", params[0]);
+    fprintf (out, "CONTROL  DATASET     = %s\n", dataset);
     fprintf (out, "         ADSI        = SCF\n");
     fprintf (out, "         POTFIL      = %s\n", output_pot_filename);
     fprintf (out, "         PRINT = 0\n");

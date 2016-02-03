@@ -21,7 +21,7 @@ bool correct_number_of_parameters (int nparams);
 
 void make_dataset (const double *params);
 
-int write_inp_file (FILE *out, const double *params, int mode);
+int write_inp_file (FILE *out, int mode);
 int write_pot_file (FILE *out, const double *params, int mode);
 
 void specific_usage (void);

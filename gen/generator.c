@@ -87,7 +87,7 @@ main (int argc, char **argv)
     output_pot_file = fopen_checked (output_pot_filename, "w", "potential file");
 
     /* Write the output files and check for success. */
-    if (write_inp_file (output_inp_file, params, mode)
+    if (write_inp_file (output_inp_file, mode)
         || write_pot_file (output_pot_file, params, mode)) {
         ret = EXIT_FAILURE;
     } else {
