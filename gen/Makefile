@@ -2,7 +2,7 @@ CFLAGS+=-Wall -Wextra -std=gnu99
 LDFLAGS=-lm
 
 OBJS=utils.o generator.o
-GENS=fcc-af fcc-f fcc-as-bct fcc-nonmag cscl-nonmag bct-af
+GENS=fcc-af fcc-f fcc-as-bct fcc-nonmag cscl-nonmag bct-af bct-f
 
 all: $(GENS)
 
