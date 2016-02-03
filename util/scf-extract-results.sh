@@ -57,7 +57,7 @@ if [ $# -lt 1 ]; then
 fi
 
 # Print out column names
-echo "# a_lat, mag, e_f, e_tot"
+echo "# param1, ..., mag, e_f, e_tot"
 
 # Loop through all folders passed.
 while [ $# -ge 1 ]; do
@@ -81,26 +81,28 @@ while [ $# -ge 1 ]; do
     # Loop through the output files in the directory.
     for f in *_SCF.log; do
         # Get the lattice parameter (the first part of the filename).
-        a=${f%_SCF.log}
+        dataset=${f%_SCF.log}
 
         # Running the convergence checker program for this output file
-        ${check} `printf "%.6f.out" ${a}`
+        ${check} ${dataset}.out
         check_status=$?
 
         # If the convergence checker returned an error code, that means we didn't find the term
         # "cycle converged", so it didn't!
         if [ ${check_status} -eq 3 ]; then
-            echo "For $1/${a}, error reading output file" >&2
+            echo "For $1/${dataset}, error reading output file" >&2
         elif [ ${check_status} -eq 1 ]; then
-            echo "$1/${a} did not converge" >&2
+            echo "$1/${dataset} did not converge" >&2
         # Otherwise, the cycle converged and we can print out the results.
         else
             line=$(echo `tail -n 1 ${f}`)
             arr=($line)
 
+            params=`echo "${dataset}" | sed 's/-/, /'`
+
             # Print out the lattice parameter, magnetisation, Fermi energy and
             # total integrated energy, in that order.
-            printf "%.15g, %.15g, %.15g, %.15g\n" "$a" "${arr[7]}" "${arr[4]}" "${arr[9]}"
+            printf "%s, %.15g, %.15g, %.15g\n" "${params}" "${arr[7]}" "${arr[4]}" "${arr[9]}"
         fi
     done
 
