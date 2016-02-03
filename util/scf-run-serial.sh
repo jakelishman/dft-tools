@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # SYNOPSIS
-#   scf-run-serial.sh generator [outdir]
+#   scf-run-serial.sh [-t] generator [outdir]
 #   and pipe lattice parameters into the script.
 #
 # BUGS
@@ -16,10 +16,19 @@
 #   2016-01-28
 
 # If we're not given the generator, then we must fail.
-if [ $# -ne 1 ] && [ $# -ne 2 ]; then
-    echo "Usage: scf-run-serial.sh generator [outdir]" >&2
-    echo "       and pipe in lattice parameters" >&2
+if [ $# -lt 1 ] && [ $# -gt 3 ]; then
+    echo "Usage: scf-run-serial.sh [-t] generator [outdir]" >&2
+    echo "       and pipe in a list of arguments to the generator, one set per line" >&2
     exit 1
+fi
+
+# Check to see if this is a test run (whether or not we should actually do the
+# qsub'ing and rm'ing the script at the end.
+if [ "$1" = "-t" ]; then
+    testrun=true
+    shift
+else
+    testrun=false
 fi
 
 # Get the absolute path of the generator.
@@ -40,57 +49,46 @@ if [ -n "$2" ]; then
     cd "$2"
 fi
 
-# Read in the first lattice parameter.
-IFS=
-read -r first
-
-# Initialise the other lattice parameter string.
-otherlats=""
-
-# Read in other lattice paramters.
-while IFS= read -r curlat; do
-    # If nothing was read in, then end.
-    [[ $curlat ]] || break
-
-    # Add the next line to the lattice parameter, trimming trailing space.
-    otherlats+=`echo "$curlat" | xargs`
-    # Add a single space to separate.
-    otherlats+=" "
-done
-
-# Trim final space.
-otherlats=`echo "$otherlats" | xargs`
-
 # The output script that we will be qsub-ing.
-script="scf${first}-${otherlats##* }.sh"
+script="scf-qsubber.sh"
 
 # The kkrscf binary.
 bin=${HOME}/bin/kkrscf5.4
 
-# Load the modules we need for `kkrscf` to run. 
-module load intel/13.1
-module load ompi/1.6.4/intel/13.1
-
-# Actually write the script into the correct place.
-echo '#!/bin/bash' > ${script}
-echo 'cd ${PBS_O_WORKDIR}' >> ${script}
-echo "${gen} -s ${first}" >> ${script}
-echo "${bin} < `printf '%f.inp' ${first}` > `printf '%f.out' ${first}`" >> ${script}
-echo "prevf=`printf '%f' ${first}`" >> ${script}
-
-# If there are other lattice parameters to write, then we need to write their
-# loop.  Still works even if there's only one other lattice parameter..
-if [ -n "$otherlats" ]; then 
-    echo "for i in ${otherlats}; do" >> ${script}
-    echo '    latf=`printf "%f" ${i}`' >> ${script}
-    echo "    ${gen} -i \${i} \${prevf}.pot_new" >> ${script}
-    echo "    ${bin} < \${latf}.inp > \${latf}.out" >> ${script}
-    echo '    prevf=${latf}' >> ${script}
-    echo 'done' >> ${script}
+if [ "${testrun}" = false ]; then
+    # Load the modules we need for `kkrscf` to run.
+    module load intel/13.1
+    module load ompi/1.6.4/intel/13.1
 fi
 
-# qsub the job!
-qsub -l nodes=1:ppn=1,walltime=72:00:00 -V ${script}
+IFS=
+read -r curargs
 
-# Get rid of the temporary script.
-rm ${script}
+if [ -z "${curargs}" ]; then
+    echo "Need at least one set of lattice parameters!" >&2
+    exit 1
+fi
+
+# Set up the initial part of the script.
+echo '#!/bin/bash' > ${script}
+echo 'cd ${PBS_O_WORKDIR}' >> ${script}
+echo "dataset=\`${gen} -s ${curargs}\`" >> ${script}
+echo "${bin} < \${dataset}.inp > \${dataset}.out" >> ${script}
+echo 'prev=${dataset}' >> ${script}
+
+# Read in the rest of the lattice parameter arguments.
+while IFS= read -r curargs; do
+    # If nothing was read in, then end.
+    [[ $curargs ]] || break
+
+    echo "dataset=\`${gen} -i \"\${prev}.pot_new\" ${curargs}\`" >> ${script}
+    echo "${bin} < \${dataset}.inp > \${dataset}.out" >> ${script}
+done
+
+if [ "${testrun}" = false ]; then
+    # qsub the job!
+    qsub -l nodes=1:ppn=1,walltime=72:00:00 -V ${script}
+
+    # Get rid of the temporary script.
+    rm ${script}
+fi
