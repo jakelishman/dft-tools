@@ -4,6 +4,7 @@ util/half-column
 util/minima
 util/converge-check
 util/difference
+util/data-transform
 
 # Untracked generators
 gen/**
