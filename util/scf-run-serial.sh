@@ -12,7 +12,7 @@
 #   2016-01-28
 
 # If we're not given the generator, then we must fail.
-if [ $# -lt 1 ] && [ $# -gt 3 ]; then
+if [ $# -lt 1 ] || [ $# -gt 3 ]; then
     echo "Usage: scf-run-serial.sh [-t] generator [outdir]" >&2
     echo "       and pipe in a list of arguments to the generator, one set per line" >&2
     exit 1
