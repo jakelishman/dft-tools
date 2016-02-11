@@ -84,6 +84,7 @@ done
 if [ "${testrun}" = false ]; then
     # qsub the job!
     qsub -l nodes=1:ppn=1,walltime=72:00:00 -V ${script}
+    # qsub -q taskfarm -l nodes=1:ppn=1,walltime=48:00:00 -V ${script}
 
     # Get rid of the temporary script.
     rm ${script}
