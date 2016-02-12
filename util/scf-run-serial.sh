@@ -67,7 +67,8 @@ fi
 
 # Set up the initial part of the script.
 echo '#!/bin/bash' > ${script}
-echo 'cd ${PBS_O_WORKDIR}' >> ${script}
+echo 'tempdir=$(mktemp -d)' >> ${script}
+echo 'cd ${tempdir}' >> ${script}
 echo "dataset=\`${gen} -s ${curargs}\`" >> ${script}
 echo "${bin} < \${dataset}.inp > \${dataset}.out" >> ${script}
 echo 'prev=${dataset}' >> ${script}
@@ -81,6 +82,10 @@ while IFS= read -r curargs; do
     echo "${bin} < \${dataset}.inp > \${dataset}.out" >> ${script}
     echo 'prev=${dataset}' >> ${script}
 done
+
+# Remove the temporary directory.
+echo 'cp ./* ${PBS_O_WORKDIR}' >> ${script}
+echo 'rm -rf ${tempdir}' >> ${script}
 
 if [ "${testrun}" = false ]; then
     # qsub the job!

@@ -80,9 +80,12 @@ bin=${HOME}/bin/kkrscf5.4
 
 # Actually write the script into the correct place.
 echo "#!/bin/bash" > ${script}
-echo "cd \$PBS_O_WORKDIR" >> ${script}
+echo 'tempdir=$(mktemp -d)' >> ${script}
+echo 'cd ${tempdir}' >> ${script}
 echo "dataset=\`tail -n+\${PBS_ARRAYID} ${inputs} | head -n 1 | xargs ${gen}\`" >> ${script}
 echo "${bin} < \${dataset}.inp > \${dataset}.out" >> ${script}
+echo 'cp -r ./* ${PBS_O_WORKDIR}/' >> ${script}
+echo 'rm -rf ${tempdir}' >> ${script}
 
 if [ "${testrun}" = false ]; then
     # Load the modules we need for `kkrscf` to run. 
