@@ -79,6 +79,7 @@ while IFS= read -r curargs; do
 
     echo "dataset=\`${gen} -i \"\${prev}.pot_new\" ${curargs}\`" >> ${script}
     echo "${bin} < \${dataset}.inp > \${dataset}.out" >> ${script}
+    echo 'prev=${dataset}' >> ${script}
 done
 
 if [ "${testrun}" = false ]; then
