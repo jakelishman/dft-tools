@@ -85,6 +85,7 @@ done
 
 # Remove the temporary directory.
 echo 'cp ./* ${PBS_O_WORKDIR}' >> ${script}
+echo 'cd ${PBS_O_WORKDIR}' >> ${script}
 echo 'rm -rf ${tempdir}' >> ${script}
 
 if [ "${testrun}" = false ]; then

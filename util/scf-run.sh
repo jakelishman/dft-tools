@@ -56,7 +56,7 @@ fi
 
 # Create variables of the temporary files we'll be using.
 prefix=`date +%s_`
-inputs=${scfdir}/${prefix}inputs
+inputs="${scfdir}/${prefix}inputs"
 
 # Redirect the piped in input to the inputs file.
 $(cat - > ${inputs})
@@ -82,7 +82,7 @@ bin=${HOME}/bin/kkrscf5.4
 echo "#!/bin/bash" > ${script}
 echo 'tempdir=$(mktemp -d)' >> ${script}
 echo 'cd ${tempdir}' >> ${script}
-echo "dataset=\`tail -n+\${PBS_ARRAYID} ${inputs} | head -n 1 | xargs ${gen}\`" >> ${script}
+echo "dataset=\`tail -n+\${PBS_ARRAYID} \"\${PBS_O_WORKDIR}/${inputs}\" | head -n 1 | xargs ${gen}\`" >> ${script}
 echo "${bin} < \${dataset}.inp > \${dataset}.out" >> ${script}
 echo 'cp -r ./* ${PBS_O_WORKDIR}/' >> ${script}
 echo 'rm -rf ${tempdir}' >> ${script}
