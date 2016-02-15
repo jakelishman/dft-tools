@@ -90,8 +90,8 @@ main (int argc, const char **argv)
     while ((cur_ptr = fgets (line_buffer, LINEBUF, in))) {
         line_num++;
 
-        /* If the line is a comment */
-        if (line_buffer[0] == '#')
+        /* If the line is a comment or blank.*/
+        if (line_buffer[0] == '#' || line_buffer[0] == '\n')
             continue;
 
         /* Reinitialise the Booleans so we can check we got them in this line. */
