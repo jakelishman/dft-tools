@@ -94,7 +94,7 @@ count=`wc -l ${inputs}`
 count=${count% *}
 
 # Set a number of operations to do per CoW task so we have to wait less!
-chunksize=16
+chunksize=32
 chunkcount=$((count / chunksize))
 
 # Account for any remainder.
