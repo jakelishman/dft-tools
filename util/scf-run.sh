@@ -1,7 +1,35 @@
 #!/bin/bash
 
 # SYNOPSIS
-#   scf-run.sh outdir generator a_0 da a_n
+#   scf-run.sh [-t] generator [outdir]
+#
+#   Reads sets of generator arguments in from stdin, then organises them in such
+#   a way that the run is submitted safely by qsub.
+#
+# ARGUMENTS
+#   -t
+#       Test run - perform all logic, but leave the script file in place and do
+#       not submit to PBS.  If not given, the run will be qsubbed.
+#
+#   generator
+#       A generator program which, given a line from stdin, will create two
+#       files in the current directory, one which is an input file for KKRSCF
+#       and one which is a corresponding potential file.  The generator should
+#       also output to stdout (only this line) a "dataset" string, which should
+#       be the non-extension part of the input and potential filenames.  This
+#       should be unique to the input parameters.
+#
+#       The two filenames should be respectively "${dataset}.inp" and
+#       "${dataset}.pot", where ${dataset} is the string the generator printed
+#       to stdout.
+#
+#       Example generator sources are in gen/, in the root directory of this git
+#       repository.
+#
+#   outdir
+#       The directory to place all output files in.  All work will be done on
+#       local CSC machines in the /tmp directory, but data will be copied back
+#       to outdir.  Assumed to be . if not given.
 #
 # AUTHOR
 #   Jake Lishman
@@ -65,9 +93,18 @@ $(cat - > ${inputs})
 count=`wc -l ${inputs}` 
 count=${count% *}
 
+# Set a number of operations to do per CoW task so we have to wait less!
+chunksize=16
+chunkcount=$((count / chunksize))
+
+# Account for any remainder.
+if [ "$((count % chunksize))" -ne "0" ]; then
+    chunkcount=$((chunkcount + 1))
+fi
+
 # Check we've at least got something to qsub.
 if [ $count -eq 0 ]; then
-    #rm ${inputs}
+    rm ${inputs}
     echo "Error: must have at least one set of lattice parameters!" >&2
     exit 1
 fi
@@ -79,21 +116,53 @@ script=scf-qsubber.sh
 bin=${HOME}/bin/kkrscf5.4
 
 # Actually write the script into the correct place.
-echo "#!/bin/bash" > ${script}
-echo 'tempdir=$(mktemp -d)' >> ${script}
-echo 'cd ${tempdir}' >> ${script}
-echo "dataset=\`tail -n+\${PBS_ARRAYID} \"\${PBS_O_WORKDIR}/${inputs}\" | head -n 1 | xargs ${gen}\`" >> ${script}
-echo "${bin} < \${dataset}.inp > \${dataset}.out" >> ${script}
-echo 'cp -r ./* ${PBS_O_WORKDIR}/' >> ${script}
-echo 'rm -rf ${tempdir}' >> ${script}
+cat > ${script} << ScriptEnd
+#!/bin/bash
+#PBS -q taskfarm
+#PBS -l nodes=1:ppn=1,walltime=48:00:00
+#PBS -t 1-${chunkcount}
+#PBS -V
 
+# Make the temporary directory so writing the new potentials doesn't hit CSC
+# networked storage.
+tempdir=\$(mktemp -d)
+cd \${tempdir}
+
+# Calculate the first line this array instance will want from the input
+# parameters file.
+first=\$(((PBS_ARRAYID - 1) * ${chunksize} + 1))
+
+# Calculate the last line this array instance will want from the input
+# parameters file - if this is the last in the array, then we just want to get
+# all remaining parameters.
+if [ \${PBS_ARRAYID} -ne '${chunkcount}' ]; then
+    last=\$((PBS_ARRAYID * ${chunksize}))
+else
+    last=${count}
+fi
+
+# Loop through all the lattice parameters we want to do in this run.
+for i in \`seq \${first} \${last}\`; do
+    dataset=\`tail -n+\${i} "\${PBS_O_WORKDIR}/${inputs}" | head -n1 | xargs ${gen} \`
+    ${bin} < \${dataset}.inp > \${dataset}.out
+done
+
+# Copy all the files back into networked storage.
+cp -r ./* \${PBS_O_WORKDIR}/
+cd \${PBS_O_WORKDIR}
+
+# Get rid of the temporary directory.
+rm -rf \${tempdir}
+ScriptEnd
+
+# Qsub if it's not a test run.
 if [ "${testrun}" = false ]; then
     # Load the modules we need for `kkrscf` to run. 
     module load intel/13.1
     module load ompi/1.6.4/intel/13.1
 
     # qsub the job!
-    qsub -q taskfarm -l nodes=1:ppn=1,walltime=04:00:00 -t 1-${count} -V ${script}
+    qsub ${script}
 
     # Get rid of the temporary script.
     rm ${script}
