@@ -96,6 +96,9 @@ int write_pot_file (FILE *out, const double *params, int mode)
     fprintf (out, "SCF-ALG   BROYDEN2\n");
     fprintf (out, "SCF-ITER           0\n");
     fprintf (out, "SCF-MIX       0.1000000000\n");
+    fprintf (out, "SCF-TOL       0.0000100000\n");
+    fprintf (out, "RMSAVV    999999.0000000000\n");
+    fprintf (out, "RMSAVB    999999.0000000000\n");
     fprintf (out, "EF            0.0000000000\n");
     fprintf (out, "VMTZ          0.0000000000\n");
     fprintf (out, "*******************************************************************************\n");
