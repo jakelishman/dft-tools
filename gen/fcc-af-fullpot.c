@@ -8,21 +8,21 @@
 bool
 correct_number_of_parameters (int nparams)
 {
-    return nparams == 2;
+    return nparams == 1;
 }
 
 void
 specific_usage (void)
 {
-    fprintf (stderr, "Takes 2 parameters.  The first is the base lattice parameter, which should be the same as the\n");
-    fprintf (stderr, "lattice parameter for CsCl FeRh.  The second is the ratio c/a.\n");
+    fprintf (stderr, "Takes only one lattice parameter, which should be the same as the lattice parameter\n");
+    fprintf (stderr, "of CsCl FeRh.\n");
     return;
 }
 
 void
 make_dataset (const double *params)
 {
-    snprintf (dataset, MAX_DATASET, "%.10g-%.10g", params[0], params[1]);
+    snprintf (dataset, sizeof(dataset), "%.10g", params[0]);
 }
 
 int
@@ -46,22 +46,18 @@ write_inp_file (FILE *out, int mode)
     fprintf (out, "         TOL=0.00001  MIXOP=0.10  ISTBRY=1\n");
     fprintf (out, "         FULLPOT\n");
     fprintf (out, "         QIONSCL=1.0\n");
-    fprintf (out, "         MSPIN={3.1, 1.0, 3.1, 1.0}\n");
+    fprintf (out, "         MSPIN={2.9, 0, -2.9, 0}\n");
     fprintf (out, "         NOSSITER\n");
 
     return 0;
 }
 
-int write_pot_file (FILE *out, const double *params, int mode)
+int
+write_pot_file (FILE *out, const double *params, int mode)
 {
     (void) mode;
 
-    const double a = sqrt(2) * params[0];
-
-    const double lat_matrix[3][3] = {{-0.5, 0.5, 0.5 * sqrt(2) * params[1]},
-                                     {0.5, -0.5, 0.5 * sqrt(2) * params[1]},
-                                     {0.5, 0.5, -0.5 * sqrt(2) * params[1]}};
-    const double rws = wigner_seitz_radius (a, lat_matrix, 4);
+    const double rws = 0.49237251092 * params[0];
     const double rmt = 0.85 * rws;
     const double dx  = log (rws / 0.000001) / 720.0;
 
@@ -107,23 +103,20 @@ int write_pot_file (FILE *out, const double *params, int mode)
     fprintf (out, "LATTICE\n");
     fprintf (out, "SYSDIM       3D\n");
     fprintf (out, "SYSTYPE      BULK\n");
-    fprintf (out, "BRAVAIS            9        tetragonal  body-centered  4/mmm  D_4h\n");
-    fprintf (out, "ALAT          %.10f\n", a);
-    fprintf (out, "A(1)         % .10f    % .10f    % .10f\n", lat_matrix[0][0],
-                                                               lat_matrix[0][1], lat_matrix[0][2]);
-    fprintf (out, "A(2)         % .10f    % .10f    % .10f\n", lat_matrix[1][0],
-                                                               lat_matrix[1][1], lat_matrix[1][2]);
-    fprintf (out, "A(3)         % .10f    % .10f    % .10f\n", lat_matrix[2][0],
-                                                               lat_matrix[2][1], lat_matrix[2][2]);
+    fprintf (out, "BRAVAIS           13        cubic       face-centered  m3m    O_h \n");
+    fprintf (out, "ALAT          %.10f\n", 2 * params[0]);
+    fprintf (out, "A(1)          0.0000000000    0.5000000000    0.5000000000\n");
+    fprintf (out, "A(2)          0.5000000000    0.0000000000    0.5000000000\n");
+    fprintf (out, "A(3)          0.5000000000    0.5000000000    0.0000000000\n");
     fprintf (out, "*******************************************************************************\n");
     fprintf (out, "SITES\n");
     fprintf (out, "CARTESIAN T\n");
     fprintf (out, "BASSCALE      1.0000000000    1.0000000000    1.0000000000\n");
     fprintf (out, "        IQ      QX              QY              QZ\n");
     fprintf (out, "         1    0.0000000000    0.0000000000    0.0000000000\n");
-    fprintf (out, "         2    0.5000000000    0.0000000000   % .10f\n", 0.5 * lat_matrix[0][2]);
-    fprintf (out, "         3    0.5000000000    0.5000000000    0.0000000000\n");
-    fprintf (out, "         4    0.0000000000    0.5000000000   % .10f\n", 0.5 * lat_matrix[0][2]);
+    fprintf (out, "         2    0.2500000000    0.2500000000    0.2500000000\n");
+    fprintf (out, "         3    0.5000000000    0.5000000000    0.5000000000\n");
+    fprintf (out, "         4    0.7500000000    0.7500000000    0.7500000000\n");
     fprintf (out, "*******************************************************************************\n");
     fprintf (out, "OCCUPATION\n");
     fprintf (out, "        IQ     IREFQ       IMQ       NOQ  ITOQ  CONC\n");

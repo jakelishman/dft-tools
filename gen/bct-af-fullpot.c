@@ -82,7 +82,7 @@ int write_pot_file (FILE *out, const double *params, int mode)
     fprintf (out, "SCF-INFO\n");
     fprintf (out, "INFO      NONE\n");
     fprintf (out, "SCFSTATUS START\n");
-    fprintf (out, "FULLPOT   T\n");
+    fprintf (out, "FULLPOT   F\n");
     fprintf (out, "BREITINT  F\n");
     fprintf (out, "NONMAG    F\n");
     fprintf (out, "ORBPOL    NONE\n");
