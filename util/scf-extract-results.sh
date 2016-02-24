@@ -61,6 +61,8 @@ echo "# param1, ..., mag, e_f, e_tot"
 
 # Loop through all folders passed.
 while [ $# -ge 1 ]; do
+    # Reset to where we started for relative directories to work
+    cd ${PBS_O_WORKDIR}
 
     # Check that the argument is actually a folder.
     if [ ! -d "$1" ]; then
@@ -76,7 +78,6 @@ while [ $# -ge 1 ]; do
     echo "# Data folder: $1"
 
     # Make sure we're in the right directory.
-    cd ${PBS_O_WORKDIR}
     cd $1
 
     # Loop through the output files in the directory.
