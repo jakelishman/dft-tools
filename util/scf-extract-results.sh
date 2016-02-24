@@ -63,7 +63,7 @@ echo "# param1, ..., mag, e_f, e_tot"
 while [ $# -ge 1 ]; do
 
     # Check that the argument is actually a folder.
-    if [ ! -d "${PBS_O_WORKDIR}/$1" ]; then
+    if [ ! -d "$1" ]; then
         echo "$1 is not a directory." >&2
 
         # Shift the arguments so we move to the next folder.
@@ -76,7 +76,8 @@ while [ $# -ge 1 ]; do
     echo "# Data folder: $1"
 
     # Make sure we're in the right directory.
-    cd ${PBS_O_WORKDIR}/$1
+    cd ${PBS_O_WORKDIR}
+    cd $1
 
     # Loop through the output files in the directory.
     for f in *_SCF.log; do
