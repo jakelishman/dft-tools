@@ -42,7 +42,7 @@ write_inp_file (FILE *out, int mode)
     fprintf (out, "ENERGY   GRID={5}  NE={30}\n");
     fprintf (out, "         EMIN=-0.2   ImE=0.0 Ry\n");
     fprintf (out, "\n");
-    fprintf (out, "SCF      NITER=200 MIX=0.10 VXC=VWN\n");
+    fprintf (out, "SCF      NITER=100 MIX=0.10 VXC=VWN\n");
     fprintf (out, "         TOL=0.00001  MIXOP=0.10  ISTBRY=1\n");
     fprintf (out, "         FULLPOT\n");
     fprintf (out, "         QIONSCL=1.0\n");
