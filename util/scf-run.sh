@@ -145,13 +145,14 @@ fi
 for i in \`seq \${first} \${last}\`; do
     dataset=\`tail -n+\${i} "\${PBS_O_WORKDIR}/${inputs}" | head -n1 | xargs ${gen} \`
     ${bin} < \${dataset}.inp > \${dataset}.out
+
+    # Copy the created files back to networked storage as we go in case the job
+    # is killed.
+    cp -r ./\${dataset}* \${PBS_O_WORKDIR}
 done
 
-# Copy all the files back into networked storage.
-cp -r ./* \${PBS_O_WORKDIR}/
-cd \${PBS_O_WORKDIR}
-
 # Get rid of the temporary directory.
+cd \${PBS_O_WORKDIR}
 rm -rf \${tempdir}
 ScriptEnd
 
