@@ -5,6 +5,7 @@ util/minima
 util/converge-check
 util/difference
 util/data-transform
+util/scf-join
 
 # Untracked generators
 gen/**
