@@ -55,12 +55,9 @@ main (int argc, char **argv)
             fprintf (stderr, "Couldn't find enough sites in '%s'.\n", argv[1]);
             return EXIT_FAILURE;
         }
-        if (sscanf (cur, "sum %*f %*f %*f %lf", &mag) != 1) {
-            fprintf (stderr, "Error getting magnetisation for site %d in '%s'.\n", i+1, argv[1]);
-            return EXIT_FAILURE;
-        }
+        sscanf (cur, "sum %*f %*f %*f %lf", &mag);
         printf (",%.15g", mag);
-        prev += SEARCHDIST;
+        prev = cur + SEARCHDIST;
     }
     putchar ('\n');
 
