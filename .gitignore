@@ -6,6 +6,7 @@ util/converge-check
 util/difference
 util/data-transform
 util/scf-join
+util/scf-moments
 
 # Untracked generators
 gen/**
