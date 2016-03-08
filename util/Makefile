@@ -1,7 +1,7 @@
 CFLAGS+=-Wall -Wextra -std=gnu99
 LDFLAGS=-lm
 
-BINS=converge-check difference ferh-cell-compare half-column minima data-transform scf-join
+BINS=converge-check difference ferh-cell-compare half-column minima data-transform scf-join scf-moments
 
 all: $(BINS)
 
