@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TAILBYTES   10700
-#define BUFSIZE     2048
+#define TAILBYTES   12000
+#define BUFSIZE     4096
 #define NSITES      4
-#define SEARCHDIST  256
+#define SEARCHDIST  128
 #define DATASETSIZE 64
 
 int
